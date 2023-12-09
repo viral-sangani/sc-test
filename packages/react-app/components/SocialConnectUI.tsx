@@ -1,6 +1,5 @@
 import { useSocialConnect } from "@/SocialConnect/useSocialConnect";
 import { Dialog, Transition } from "@headlessui/react";
-import { signIn, signOut, useSession } from "next-auth/react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 interface Props {
@@ -14,29 +13,21 @@ const SocialConnectUI: React.FC<Props> = ({ isOpen, closeModal }) => {
   const [btnLoading, setBtnLoading] = useState(false);
   const [odisRegistedAddresses, setOdisRegistedAddresses] = useState("");
 
-  const { data: session } = useSession();
-
   const getLookupAddress = useCallback(async () => {
     setLoading(true);
-    const addresses = await lookupAddress((session as any)?.username);
-    console.log(
-      "🚀 ~ file: SocialConnectUI.tsx:22 ~ getLookupAddress ~ addresses:",
-      addresses
-    );
+    const addresses = await lookupAddress("9999999999");
     setLoading(false);
     if (addresses) {
       setOdisRegistedAddresses(addresses);
     } else {
       setOdisRegistedAddresses("");
     }
-  }, [lookupAddress, session]);
+  }, [lookupAddress]);
 
   useEffect(() => {
-    if (session) {
-      getLookupAddress();
-    }
+    getLookupAddress();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+  }, []);
 
   return (
     <>
@@ -107,88 +98,28 @@ const SocialConnectUI: React.FC<Props> = ({ isOpen, closeModal }) => {
                           use it in the app.
                         </p>
                       )}
+                    </div>
+                  )}
 
-                      {session && (
-                        <div className="text-sm text-gray-500 mt-5">
-                          <p>
-                            Username:{" "}
-                            <span className="text-black font-bold">
-                              {(session as any)?.username}
-                            </span>
-                          </p>
-                          <p>
-                            Address:{" "}
-                            <span className="text-black font-bold">
-                              {account?.substring(0, 5)}...
-                              {account?.substring(
-                                account.length - 5,
-                                account.length
-                              )}
-                            </span>
-                          </p>
-                          <p>
-                            Provider:{" "}
-                            <span className="text-black font-bold">
-                              {process.env
-                                .NEXT_PUBLIC_SOCIAL_CONNECT_PROVIDER ===
-                                "GITHUB" && "Github"}
-                            </span>
-                          </p>
-                        </div>
-                      )}
-                      {session && odisRegistedAddresses === "" && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={btnLoading}
-                            onClick={async () => {
-                              setBtnLoading(true);
-                              await register((session as any)?.username);
-                              setTimeout(async () => {
-                                await getLookupAddress();
-                                setBtnLoading(false);
-                              }, 1000);
-                            }}
-                            className={`mt-3 text-white ${
-                              btnLoading ? "bg-gray-700" : "bg-black"
-                            }  hover:bg-gray-600 border border-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-500 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center  mr-2 mb-2`}
-                          >
-                            {btnLoading ? "Loading..." : "Register Username"}
-                          </button>
-                        </>
-                      )}
-                      {session && odisRegistedAddresses !== "" && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={btnLoading}
-                            onClick={async () => {
-                              setBtnLoading(true);
-                              await revoke((session as any)?.username);
-                              setTimeout(async () => {
-                                await getLookupAddress();
-                                setBtnLoading(false);
-                              }, 1000);
-                            }}
-                            className={`mt-3 text-white ${
-                              btnLoading ? "bg-gray-700" : "bg-black"
-                            } hover:bg-gray-600 border border-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-500 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center  mr-2 mb-2`}
-                          >
-                            {btnLoading ? "Loading..." : "Revoke Username"}
-                          </button>
-                        </>
-                      )}
+                  {!loading && odisRegistedAddresses && (
+                    <div className="text-sm flex flex-col">
+                      <span>PhoneNumber : 9999999999</span>
+                      <span>Address: {odisRegistedAddresses}</span>
                     </div>
                   )}
 
                   <div className="mt-4 w-full flex justify-between">
                     <button
-                      onClick={() => {
-                        if (!session) {
-                          signIn();
+                      onClick={async () => {
+                        setBtnLoading(true);
+                        if (!odisRegistedAddresses) {
+                          await register("9999999999");
                         } else {
-                          signOut();
+                          await revoke("9999999999");
                         }
+                        await getLookupAddress();
+
+                        setBtnLoading(false);
                       }}
                       type="button"
                       className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30"
@@ -206,7 +137,9 @@ const SocialConnectUI: React.FC<Props> = ({ isOpen, closeModal }) => {
                           clip-rule="evenodd"
                         />
                       </svg>
-                      {!session ? "Sign in with Github" : "Sign Out"}
+                      {odisRegistedAddresses
+                        ? "Revoke"
+                        : "Sign in with Phone Number"}
                     </button>
                     <button
                       type="button"
